@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.CrossOrigin;
+
 
 import com.spring.spring_rest.dto.StudentDto;
 import com.spring.spring_rest.service.StudentService;
@@ -25,6 +27,7 @@ import jakarta.validation.Valid;
  */
 @RestController
 @RequestMapping("/api/students")
+@CrossOrigin(origins = "*")
 public class StudentRestController {
 
     private StudentService studentService;
