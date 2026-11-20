@@ -1,6 +1,25 @@
+/**
+ * Base endpoint URL for student CRUD operations.
+ * @type {string}
+ */
 const API_URL = "http://localhost:8080/api/students";
+
+/**
+ * Base endpoint URL for authentication operations.
+ * @type {string}
+ */
 const API_AUTH = "http://localhost:8080/api/auth";
 
+/**
+ * Sends a POST request to create a new student record.
+ *
+ * @async
+ * @param {Object} studentData - The student details to save.
+ * @param {string} studentData.firstName - The student's first name.
+ * @param {string} studentData.lastName - The student's last name.
+ * @param {string} studentData.email - The student's email address.
+ * @returns {Promise<void>}
+ */
 async function createStudent(studentData) {
   try {
     const response = await fetch(API_URL, {
@@ -22,6 +41,12 @@ async function createStudent(studentData) {
   }
 }
 
+/**
+ * Resets the student form inputs, restores the submit button to its
+ * default add state, and clears validation styles if available.
+ *
+ * @returns {void}
+ */
 function resetForm() {
   document.getElementById("studentId").value = "";
   document.getElementById("studentForm").reset();
@@ -35,7 +60,11 @@ function resetForm() {
   }
 }
 
-document.getElementById("studentForm").addEventListener("submit", function(e) {
+/**
+ * Handles student form submission by validating inputs and triggering
+ * either student creation or update depending on the presence of an ID.
+ */
+document.getElementById("studentForm").addEventListener("submit", function (e) {
   e.preventDefault();
 
   if (typeof validateStudentForm === "function" && !validateStudentForm()) {
@@ -56,18 +85,26 @@ document.getElementById("studentForm").addEventListener("submit", function(e) {
   }
 });
 
+/**
+ * Fetches all student records from the backend and populates the table body.
+ *
+ * @async
+ * @returns {Promise<void>}
+ */
 async function getAllStudents() {
   try {
     const response = await fetch(API_URL, {
       credentials: "include"
     });
-    if (!response.ok) throw new Error("Network response was not ok");
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
 
     const students = await response.json();
     const tableBody = document.getElementById("studentTableBody");
     tableBody.innerHTML = "";
 
-    students.forEach(student => {
+    students.forEach((student) => {
       const row = `
         <tr>
           <td>${student.id}</td>
@@ -75,8 +112,10 @@ async function getAllStudents() {
           <td>${student.lastName}</td>
           <td>${student.email}</td>
           <td>
-            <button class="btn-edit" onclick="initializeStudentFormById(${student.id})">Edit</button>
-            <button class="btn-delete" onclick="deleteStudent(${student.id})">Delete</button>
+            <button class="btn-edit" 
+            onclick="initializeStudentFormById(${student.id})">Edit</button>
+            <button class="btn-delete" 
+            onclick="deleteStudent(${student.id})">Delete</button>
           </td>
         </tr>
       `;
@@ -84,18 +123,32 @@ async function getAllStudents() {
     });
   } catch (error) {
     console.error("Error fetching students:", error);
-    alert("Failed to fetch students. Are you logged in and is your Spring Boot backend running?");
+    alert("Failed to fetch students." + 
+        "Are you logged in and is your Spring Boot backend running?");
   }
 }
 
+/**
+ * Loads the student list once the DOM content has fully loaded.
+ */
 document.addEventListener("DOMContentLoaded", getAllStudents);
 
+/**
+ * Retrieves a single student's details by ID and populates the form
+ * for editing.
+ *
+ * @async
+ * @param {number|string} id - The unique identifier of the student.
+ * @returns {Promise<void>}
+ */
 async function initializeStudentFormById(id) {
   try {
     const response = await fetch(`${API_URL}/${id}`, {
       credentials: "include"
     });
-    if (!response.ok) throw new Error("Could not fetch student details");
+    if (!response.ok) {
+      throw new Error("Could not fetch student details");
+    }
 
     const student = await response.json();
 
@@ -116,6 +169,17 @@ async function initializeStudentFormById(id) {
   }
 }
 
+/**
+ * Sends a PUT request to update an existing student record.
+ *
+ * @async
+ * @param {number|string} id - The unique identifier of the student to update.
+ * @param {Object} studentData - The updated student details.
+ * @param {string} studentData.firstName - The updated first name.
+ * @param {string} studentData.lastName - The updated last name.
+ * @param {string} studentData.email - The updated email address.
+ * @returns {Promise<void>}
+ */
 async function updateStudent(id, studentData) {
   try {
     const response = await fetch(`${API_URL}/${id}`, {
@@ -137,6 +201,14 @@ async function updateStudent(id, studentData) {
   }
 }
 
+/**
+ * Prompts for confirmation and sends a 
+ * DELETE request to remove a student record.
+ *
+ * @async
+ * @param {number|string} id - The unique identifier of the student to delete.
+ * @returns {Promise<void>}
+ */
 async function deleteStudent(id) {
   if (confirm("Are you sure you want to delete this student?")) {
     try {
@@ -158,6 +230,16 @@ async function deleteStudent(id) {
   }
 }
 
+/**
+ * Authenticates the user via session cookie 
+ * and redirects to the main page on success.
+ *
+ * @async
+ * @param {Object} loginDto - The user's login credentials.
+ * @param {string} loginDto.username - The username.
+ * @param {string} loginDto.password - The password.
+ * @returns {Promise<void>}
+ */
 async function loginUser(loginDto) {
   try {
     const response = await fetch(`${API_AUTH}/auth_login_session`, {
@@ -178,29 +260,35 @@ async function loginUser(loginDto) {
   }
 }
 
-    async function logoutUser() {
+/**
+ * Logs the user out of the active session, clears the UI and browser credential
+ * cache, and reloads the page.
+ *
+ * @async
+ * @returns {Promise<void>}
+ */
+async function logoutUser() {
+  try {
+    await fetch(`${API_AUTH}/logout`, {
+      method: "POST",
+      credentials: "include"
+    });
+    document.getElementById("studentTableBody").innerHTML = "";
+    resetForm();
+    alert("Logged out successfully!");
+
     try {
-        await fetch(`${API_AUTH}/logout`, {
-        method: "POST",
-        credentials: "include"
-        });
-        document.getElementById("studentTableBody").innerHTML = "";
-        resetForm();
-        alert("Logged out successfully!");
-
-        try {
-        await fetch(API_URL, {
-            method: "GET",
-            headers: {
-            "Authorization": "Basic " + btoa("invalid_user:wrong_password")
-            }
-        });
-        } catch (err) {
-        console.log("Browser credential cache cleared.");
+      await fetch(API_URL, {
+        method: "GET",
+        headers: {
+          "Authorization": "Basic " + btoa("invalid_user:wrong_password")
         }
-        window.location.reload();
-
-    } catch (e) {
-        console.error("Logout transmission crash:", e);
+      });
+    } catch (err) {
+      console.log("Browser credential cache cleared.");
     }
-    }
+    window.location.reload();
+  } catch (e) {
+    console.error("Logout transmission crash:", e);
+  }
+}
