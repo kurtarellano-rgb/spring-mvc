@@ -1,84 +1,108 @@
 
-// package com.spring.spring_rest.security;
+package com.spring.spring_rest.security;
 
-// import org.springframework.security.authentication.AuthenticationManager;
-// import org.springframework.security.config.Customizer;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 
-// import org.springframework.context.annotation.Bean;
-// import org.springframework.context.annotation.Configuration;
-// import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-// import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-// import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-// import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-// import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-// import org.springframework.security.web.SecurityFilterChain;
+import java.util.Arrays;
 
-// import com.spring.spring_rest.service.CustomUserDetailsService;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-// /**
-//  * Configures Spring Security authentication and authorization.
-//  * Defines security filters, password encoding, and authentication.
-//  */
-// @EnableWebSecurity
-// @Configuration
-// public class SecurityConfig {
+import com.spring.spring_rest.service.CustomUserDetailsService;
 
-//     /**
-//      * Configures HTTP security rules for incoming requests.
-//      * Allows public access to authentication endpoints and
-//      * requires authentication for all other requests.
-//      *
-//      * @param security the HTTP security configuration
-//      * @return the configured security filter chain
-//      * @throws Exception if security configuration fails
-//      */
-//     @Bean
-//     SecurityFilterChain filterChain(HttpSecurity security)
-//             throws Exception {
-//         return security
-//                 .csrf(AbstractHttpConfigurer::disable)
-//                 .authorizeHttpRequests(auth -> auth
-//                         .requestMatchers("/api/auth/**").permitAll()
-//                         .anyRequest().authenticated()
-//                 )
-//                 .httpBasic(Customizer.withDefaults())
-//                 .build();
-//     }
+/**
+ * Configures Spring Security authentication and authorization.
+ * Defines security filters, password encoding, and authentication.
+ */
+@EnableWebSecurity
+@Configuration
+public class SecurityConfig {
 
-//     private CustomUserDetailsService userDetailsService;
+    private CustomUserDetailsService userDetailsService;
 
-//     /**
-//      * Initializes the security configuration with the user
-//      * details service.
-//      *
-//      * @param userDetailsService service for retrieving user details
-//      */
-//     public SecurityConfig(CustomUserDetailsService userDetailsService) {
-//         this.userDetailsService = userDetailsService;
-//     }
+    /**
+     * Initializes the security configuration with the user
+     * details service.
+     *
+     * @param userDetailsService service for retrieving user details
+     */
+    public SecurityConfig(CustomUserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
 
-//     /**
-//      * Creates a BCrypt password encoder for hashing passwords.
-//      *
-//      * @return the BCrypt password encoder
-//      */
-//     @Bean
-//     BCryptPasswordEncoder passwordEncoder() {
-//         return new BCryptPasswordEncoder();
-//     }
+    /**
+     * Creates a BCrypt password encoder for hashing passwords.
+     *
+     * @return the BCrypt password encoder
+     */
+    @Bean
+    BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-//     /**
-//      * Retrieves the authentication manager from the
-//      * Spring Security authentication configuration.
-//      *
-//      * @param authentication the authentication configuration
-//      * @return the configured authentication manager
-//      * @throws Exception if authentication manager retrieval fails
-//      */
-//     @Bean
-//     AuthenticationManager authenticationManager(
-//             AuthenticationConfiguration authentication)
-//             throws Exception {
-//         return authentication.getAuthenticationManager();
-//     }
-// }
+    /**
+     * Retrieves the authentication manager from the
+     * Spring Security authentication configuration.
+     *
+     * @param authentication the authentication configuration
+     * @return the configured authentication manager
+     * @throws Exception if authentication manager retrieval fails
+     */
+    @Bean
+    AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authentication)
+            throws Exception {
+        return authentication.getAuthenticationManager();
+    }
+
+    @Bean
+    SecurityFilterChain filterChain(HttpSecurity security)
+        throws Exception {
+    return security
+        .cors(cors -> cors.configure(security))
+        .csrf(AbstractHttpConfigurer::disable)
+        .sessionManagement(session -> session
+            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+        )
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/api/auth/**").permitAll()
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            .requestMatchers("/api/students/**").hasAnyAuthority("USER", "ADMIN")
+            .anyRequest().authenticated()
+        )
+        .httpBasic(Customizer.withDefaults())
+        .build();
+    }
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+
+    configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000",
+                                                    "http://192.168.137.107:5500"));
+    configuration.setAllowedMethods(Arrays.asList("GET", "POST",
+                                                    "PUT", "PATCH",
+                                                    "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(Arrays.asList("Authorization",
+                                                    "Cache-Control",
+                                                    "Content-Type"));
+
+    configuration.setAllowCredentials(true);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
+    }
+}
