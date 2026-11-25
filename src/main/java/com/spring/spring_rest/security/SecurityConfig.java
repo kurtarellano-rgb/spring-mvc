@@ -22,7 +22,6 @@ import com.spring.spring_rest.service.CustomUserDetailsService;
 
 /**
  * Configures Spring Security authentication and authorization.
- * Defines security filters, password encoding, CORS settings, and authentication.
  */
 @EnableWebSecurity
 @Configuration
@@ -107,7 +106,6 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",
                 "http://192.168.137.107:5500"
         ));
         configuration.setAllowedMethods(Arrays.asList(
